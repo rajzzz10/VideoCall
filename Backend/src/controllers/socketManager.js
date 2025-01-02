@@ -85,13 +85,13 @@ export const connectToSocket = (server) => {
             var key;
 
             for (const [room, person] of JSON.parse(JSON.stringify(Object.entries(connections)))) {
-                for (let a = 0; a < person.length; ++person) {
+                for (let a = 0; a < person.length; ++a) {
                     if (person[a] === socket.id) {
                         key = room;
                         for (let a = 0; a < connections[key].length;
                             ++a
                         ) {
-                            io.to(connections[key][a].emit('user-left', socket.id))
+                            io.to(connections[key][a]).emit('user-left', socket.id)
                         }
 
                         var index = connections[key].indexOf(socket.id);
