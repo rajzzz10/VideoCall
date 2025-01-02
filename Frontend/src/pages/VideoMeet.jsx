@@ -1,7 +1,10 @@
 import { Button, TextField } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react'
+import { io } from "socket.io-client";
 
 var connections = {};
+
+const server_url = "http://localhost:8000"; // Backend running locally
 
 const peerConfigConnections = {
     'iceServers': [
@@ -19,7 +22,7 @@ const VideoMeetComponent = () => {
 
     let [audioAvailable, setAudioAvailable] = useState(true);
 
-    let [video, setVideo] = useState();
+    let [video, setVideo] = useState([]);
 
     let [audio, setAudio] = useState();
 
@@ -85,13 +88,153 @@ const VideoMeetComponent = () => {
         getPermissions();
     },[])
 
+    let getUserMediaSuccess = ()=>{ //if user mutes call then it will ensure it send only video not audio and viceversa
+
+    }
+
+    let getUserMedia = ()=>{
+        if((video && videoAvailable) || (audio && audioAvailable)){
+            navigator.mediaDevices.getUserMedia({video : video , audio : audio}) //ensures that either video or audio is available and enabled by the user.
+                .then(getUserMediaSuccess) //todo getUserMediaSuccess
+                .then((stream)=>{})
+                .catch((e)=>console.log(e))
+        } else{
+            try {
+                let tracks = localVideoRef.current.srcObject.getTracks();
+                tracks.forEach(track => track.stop())  //If both video and audio are unavailable, it stops all existing media tracks to ensure no data is transmitted.
+            } catch (error) {
+                
+            }
+        }
+    }
+
+    useEffect(()=>{ //Triggers getUserMedia whenever the states change (e.g., user toggles mute or camera).
+        if(video !== undefined && audio !== undefined){
+            getUserMedia()
+        }
+    },[audio,video])
+
+    //todo
+    let gotMessageFromServer = (fromId , message) =>{
+
+    }
+
+    let addMessage =()=>{
+
+    }
+
+    let connectToSocketServer =()=>{
+
+        socketRef.current = io.connect(server_url,{secure : false})
+
+        socketRef.current.on('signal',gotMessageFromServer) // EX - (WebRTC Connection) STEP F6 - The other user receives Rahul’s offer and responds with their own information (called an SDP answer).
+
+        socketRef.current.on("connect" , ()=>{
+
+            socketRef.current.emit('join-call' , window.location.href) 
+            
+            // EX - (JOINCALL)STEP F1 - When Rahul opens the meeting link, the frontend sends a "join-call" request to the server.
+            //window.location.href is the meeting room URL (e.g., https://example.com/room123). It acts as the room identifier.This tells the server, "Rahul wants to join this specific meeting room."
+
+            socketIdRef.current = socketRef.current.id 
+
+            socketRef.current.on('chat-message' , addMessage)
+
+            socketRef.current.on('user-left',(id)=>{
+                setVideo((videos)=>videos.filter((video)=>video.socketId !== id ))
+            })
+
+            socketRef.current.on('user-joined', (id,clients) =>{
+                // id-new user joined
+                // clients - All clients in the room
+                //  EX - (JOINCALL)STEP F4 -  When Rahul joins, his socket.id is added to the clients list. Everyone in the room gets this updated list of participants. 
+                clients.forEach((socketListId)=>{
+
+                    connections[socketListId] = new RTCPeerConnection(peerConfigConnections) //It's a WebRTC object used to handle video and audio calls.Think of it as a direct communication line between two users.
+
+                    // EX - (WebRTC Connection)STEP F1 -For every user in the room (clients), a new connection is created.
+                    // socketListId is the unique socket.id of another user in the room.
+
+                    connections[socketListId].onicecandidate = (event) =>{
+                        if(event.candidate !== null) {
+                            socketRef.current.emit('signal' , socketListId , JSON.stringify({'ice' : event.candidate}))
+                        }
+                    }
+
+                    connections[socketListId].onaddstream = (event) => { //onaddstream's triggered when the other user's video or audio is received.
+                        
+                        let videoExists = videoRef.current.find(video => video.socketId === socketListId)
+                        if(videoExists) {
+                            setVideo(videos => {
+                                const updatedVideos = videos.map(video => 
+                                    video.socketId === socketListId ? {...video , stream : event.stream} : video
+                                )
+                                videoRef.current = updatedVideos ; 
+                                return updatedVideos ; 
+                            })
+                        } else {
+                            let newVideo = {
+                                socketId : socketListId,
+                                stream : event.stream,
+                                autoPlay : true ,
+                                playsinline : true
+                            }
+                            
+                            setVideo(videos => {
+                                const updatedVideos = [...videos , newVideo] ; 
+                                videoRef.current = updatedVideos ; 
+                                ////EX (Receiving and Displaying Media) STEP F1 - When Rahul’s stream is received by another user, they add it to their video list.
+                                return updatedVideos
+                            })
+                        }
+                    } ;
+
+                    if(window.localStream !== undefined && window.localStream !== null){
+                        connections[socketListId].addStream(window.localStream) ;
+                        //(WebRTC Connection)STEP F2 - addStream adds Rahul’s video and audio to the connection so others can see and hear him.
+                    } else{
+                        //todo blackSilence
+                    }
+                })
+
+                if(id === socketIdRef.current){
+                    for (let id2 in connections) {
+                        if(id2 === socketIdRef.current) continue
+
+                        try {
+                            connections[id2].addStream(window.localStream)
+                        } catch (e) { }
+
+                        connections[id2].createOffer().then((description)=>{ // EX - (WebRTC Connection) STEP F3 - Rahul creates an "offer" for another user (id2).
+                            connections[id2].setLocalDescription(description)
+                                .then(()=>{
+                                    socketRef.current.emit('signal',id2,JSON.stringify({'sdp': connections[id2].LocalDescription}))
+                                    //EX - (WebRTC Connection) STEP F4 -The offer is sent to the server through the "signal" event.
+                                })
+                                .catch(e => console.log(e));
+                        })
+                    }
+                }
+            })
+        })
+    }
+    let getMedia = ()=>{
+        setVideo(videoAvailable);
+        setAudio(audioAvailable);
+        connectToSocketServer();
+    }
+
+    let connect = ()=>{
+        setAskForUsername(false);
+        getMedia();
+    }
     return (
         <div>
             {askForUsername === true ?
                 <div>
                     <h2>Enter the lobby</h2>
                     <TextField id="outlined-basic" label="Username" value={username}  variant="outlined" onChange={(e)=>setUsername(e.target.value)}/>
-                    <Button variant="contained">Join</Button>
+                    <Button variant="contained"  onClick={connect}>Connect</Button>
 
                     <div>
                         <video ref={localVideoRef} autoPlay muted></video>

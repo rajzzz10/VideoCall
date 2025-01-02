@@ -14,21 +14,23 @@ export const connectToSocket = (server) => {
         }
     });
     io.on('connection', (socket) => {
+        console.log("someone Connected");
         socket.on("join-call", (path) => {
             if (connections[path] === undefined) {
                 connections[path] = []
             }
             //connections[path] : This stores the list of socket IDs (users) currently in the call identied by path .
-            connections[path].push(socket.id); //The current user's unique socket.id is added to the list of participants in the call
+            connections[path].push(socket.id); //The current user's unique socket.id is added to the list of participants in the call .
+            //EX - (JOINCALL)STEP B2 Adds Rahul's socket.id (his unique identifier) to the list of users in the room (connections[path]
 
             timeonline[socket.id] = new Date(); //timeonline : A dictionary that maps each user's socket.id to the time they joined the call
 
             for (let a = 0; a < connections[path].length; a++) {
                 io.to(connections[path][a]).emit("user-joined", socket.id, connections[path]);
             }
-            //For every participant already in the call ( connections[path] ):
-            //A user-joined event is emitted to their socket.
-            //The new user's socket.id is sent along with the updated list of all participants( connections[path] ).
+
+            //For every participant already in the call ( connections[path] ): A user-joined event is emitted to their socket.The new user's socket.id is sent along with the updated list of all participants( connections[path] ).
+            //EX - (JOINCALL)STEP B3 -  Notifies all users in the room that Rahul has joined by sending a "user-joined" message
 
             if (messages[path] !== undefined) { //messages[path] : A dictionary where each call ( path ) stores its chat history
                 for (let a = 0; a < messages[path].length; ++a) {
@@ -41,7 +43,7 @@ export const connectToSocket = (server) => {
             }
         })
 
-        socket.on("signal", (told, message) => {
+        socket.on("signal", (told, message) => { //EX - (WebRTC Connection) STEP B5 - When Rahul sends an offer, the server relays it to the specific user (told).This ensures both users can exchange information to establish a connection.
             io.to(told).emit('signal', socket.id, message)
         })
 
