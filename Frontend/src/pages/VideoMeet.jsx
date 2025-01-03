@@ -1,4 +1,5 @@
 import { Badge, Button, IconButton, TextField } from '@mui/material';
+import { motion, AnimatePresence } from 'framer-motion'
 import React, { useEffect, useRef, useState } from 'react'
 import { io } from "socket.io-client";
 import '../css/videoComponent.css';
@@ -446,91 +447,192 @@ const VideoMeetComponent = () => {
 
     return (
         <div>
-            {askForUsername === true ?
-                <div>
-                    <h2>Enter the lobby</h2>
-                    <TextField id="outlined-basic" label="Username" value={username} variant="outlined" onChange={(e) => setUsername(e.target.value)} />
-                    <Button variant="contained" onClick={connect}>Connect</Button>
-
-                    <div>
-                        <video ref={localVideoRef} autoPlay muted></video>
-                    </div>
-
-                </div>
-                : <div className='meetVideoContainer'>
-                    {showModal ? (
-                        <div className="chatRoom">
-
-                            <div className="chatContainer">
-
-                                <h1>Chat Box</h1>
-
-                                <div className="chattingDisplay">
-                                    {messages.length !== 0 ? messages.map((item, index) => {
-
-                                        console.log(messages)
-                                        return (
-                                            <div style={{ marginBottom: "20px" }} key={index}>
-                                                <p style={{ fontWeight: "bold" }}>{item.sender}</p>
-                                                <p>{item.data}</p>
-                                            </div>
-                                        )
-                                    }) : <p>No Messages Yet</p>}
-                                </div>
-                                <div className="chattingArea">
-                                    <TextField value={message} onChange={e => setMessage(e.target.value)} id='outlined-basic' label='Message here' />
-                                    <Button variant='contained' onClick={sendMessage}>SEND</Button>
-                                </div>
-                            </div>
+          <AnimatePresence mode="wait">
+            {askForUsername === true ? (
+              <motion.div
+                className="lobby"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <h2>Enter the lobby</h2>
+                <TextField
+                  id="outlined-basic"
+                  label="Username"
+                  value={username}
+                  variant="outlined"
+                  onChange={(e) => setUsername(e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      color: 'white',
+                      '& fieldset': {
+                        borderColor: 'rgba(255, 255, 255, 0.23)',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: 'rgba(255, 255, 255, 0.7)',
+                    },
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={connect}
+                  sx={{
+                    background: '#646cff',
+                    '&:hover': {
+                      background: '#535bf2',
+                    },
+                  }}
+                >
+                  Connect
+                </Button>
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <video ref={localVideoRef} autoPlay muted></video>
+                </motion.div>
+              </motion.div>
+            ) : (
+              <motion.div
+                className="meetVideoContainer"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <AnimatePresence>
+                  {showModal && (
+                    <motion.div
+                      className="chatRoom"
+                      initial={{ opacity: 0, x: 300 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 300 }}
+                    >
+                      <div className="chatContainer">
+                        <h1>Chat Box</h1>
+                        <div className="chattingDisplay">
+                          {messages.length !== 0 ? (
+                            messages.map((item, index) => (
+                              <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                style={{ marginBottom: "20px" }}
+                              >
+                                <p style={{ fontWeight: "bold" }}>{item.sender}</p>
+                                <p>{item.data}</p>
+                              </motion.div>
+                            ))
+                          ) : (
+                            <p>No Messages Yet</p>
+                          )}
                         </div>
-                    ) : <></>}
-                    <div className="buttonContainer">
-                        <IconButton style={{ color: 'white' }} onClick={handleVideo}>
-                            {(video === true) ? <VideocamIcon /> : <VideocamOffIcon />}
-                        </IconButton>
-
-                        <IconButton onClick={handleEndCall} style={{ color: 'red' }} >
-                            <CallEnd />
-                        </IconButton>
-
-                        <IconButton style={{ color: 'white' }} onClick={handleAudio}>
-                            {(audio === true) ? <MicIcon /> : <MicOffIcon />}
-                        </IconButton>
-
-                        {screenAvailable === true ?
-                            <IconButton onClick={handleScreen} style={{ color: 'white' }}>
-                                {screen === true ? <ScreenShareIcon /> : <StopScreenShareIcon />}
-                            </IconButton> : <> </>}
-
-                        <Badge badgeContent={newMessages} onChange={() => setMessages(e.target.value)} max={999} color='secondary'>
-                            <IconButton onClick={() => { setShowModal(!showModal) }} style={{ color: 'white' }}>
-                                <ChatIcon />
-                            </IconButton>
-                        </Badge>
-                    </div>
-
-                    <video className='meetUserVideo' ref={localVideoRef} autoPlay muted ></video>
-                    <div className='conferenceView'>
-                        {videos.map((video) => (
-                            <div key={video.socketId} >
-                                <video
-                                    data-socket={video.socketId}
-                                    ref={ref => {
-                                        if (ref && video.stream) {
-                                            ref.srcObject = video.stream
-                                        }
-                                    }}
-                                    autoPlay
-                                ></video>
-                            </div>
-
-                        ))}
-                    </div>
-
-                </div>
-            }
+                        <div className="chattingArea">
+                          <TextField
+                            value={message}
+                            onChange={e => setMessage(e.target.value)}
+                            id='outlined-basic'
+                            label='Message here'
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                color: 'white',
+                                '& fieldset': {
+                                  borderColor: 'rgba(255, 255, 255, 0.23)',
+                                },
+                              },
+                            }}
+                          />
+                          <Button
+                            variant='contained'
+                            onClick={sendMessage}
+                            sx={{ background: '#646cff', '&:hover': { background: '#535bf2' } }}
+                          >
+                            SEND
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+    
+                <motion.div
+                  className="buttonContainer"
+                  initial={{ y: 100 }}
+                  animate={{ y: 0 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                >
+                  <IconButton style={{ color: 'white' }} onClick={handleVideo}>
+                    {video ? <VideocamIcon /> : <VideocamOffIcon />}
+                  </IconButton>
+    
+                  <IconButton onClick={handleEndCall} style={{ color: 'red' }}>
+                    <CallEnd />
+                  </IconButton>
+    
+                  <IconButton style={{ color: 'white' }} onClick={handleAudio}>
+                    {audio ? <MicIcon /> : <MicOffIcon />}
+                  </IconButton>
+    
+                  {screenAvailable && (
+                    <IconButton onClick={handleScreen} style={{ color: 'white' }}>
+                      {screen ? <ScreenShareIcon /> : <StopScreenShareIcon />}
+                    </IconButton>
+                  )}
+    
+                  <Badge badgeContent={newMessages} max={999} color='secondary'>
+                    <IconButton
+                      onClick={() => setShowModal(!showModal)}
+                      style={{ color: 'white' }}
+                    >
+                      <ChatIcon />
+                    </IconButton>
+                  </Badge>
+                </motion.div>
+                  
+                <motion.video
+                  className='meetUserVideo'
+                  ref={localVideoRef}
+                  autoPlay
+                  muted
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                />
+    
+                <motion.div
+                  className='conferenceView'
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  {videos.map((video) => (
+                    <motion.div
+                      key={video.socketId}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <video
+                        data-socket={video.socketId}
+                        ref={ref => {
+                          if (ref && video.stream) {
+                            ref.srcObject = video.stream
+                          }
+                        }}
+                        autoPlay
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-    )
+      )
 }
 
 export default VideoMeetComponent

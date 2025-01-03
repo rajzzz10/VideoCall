@@ -1,55 +1,157 @@
-.meetVideoContainer{
+.meetVideoContainer {
     position: relative;
+    width: 100vw;
     height: 100vh;
-    width: 100vw;
-    background-color: #040f1a ;         
-}
-.meetUserVideo{
-    position: absolute;
-    bottom: 5vh;
-    left: 0;
-    height: 20vh;
-    width: auto;
-}
+    background: #1a1a1a;
+    overflow: hidden;
+  }
 
-.buttonContainer{
-    position: absolute;
-    width: 100vw;
-    text-align: center;
-    bottom: 0;
-}
-
-.buttonContainer svg{
-    font-size: 2.5rem ; 
-}
-.conferenceView{
+  .buttonContainer {
+    position: fixed;
+    bottom: 32px;
+    right: 16px; /* Align to the far right */
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 16px 32px;
+    border-radius: 50px;
     display: flex;
-    padding: 10px;
-    gap: 10px;
-}
-.conferenceView video{
-    width: 20vw;
-    min-width: 30vw;
+    flex-wrap: wrap;
+    gap: 16px;
+    backdrop-filter: blur(8px);
+  }
+  
+  @media (max-width: 600px) {
+    .buttonContainer {
+      flex-direction: column;
+      bottom: 16px;
+      right: 16px; /* Maintain alignment to the right */
+      border-radius: 16px;
+    }
+  }
+  
+  
+  .meetUserVideo {
+    position: fixed;
+    bottom: 120px;
+    left: 24px;
+    width: 280px;
+    height: 158px;
     border-radius: 12px;
-    
-}
-
-.chatRoom{
-    background-color: white;
-    color: black;
-    position: absolute;
-    right: 0;
-    border-radius: 10px;
-    height: 90vh;
-    width: 30vw;
-}
-
-.chatContainer{
-    position: relative;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+  }
+  
+  .conferenceView {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* Center align videos */
+    gap: 16px;
+    padding: 24px;
+    height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+  
+  .conferenceView video {
+    flex: 1 1 calc(33.33% - 16px); /* Allow up to 3 videos per row */
+    max-width: calc(33.33% - 16px); /* Restrict max width per video */
+    min-width: 300px; /* Minimum size for a video */
+    height: auto;
+    object-fit: contain;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.2);
+  }
+  
+  .chatRoom {
+    position: fixed;
+    right: 24px;
+    top: 24px;
+    width: 320px;
+    height: 480px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    border-radius: 16px;
+    z-index: 1000;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .chatContainer {
+    display: flex;
+    flex-direction: column;
     height: 100%;
-}
-
-.chattingArea{
-    position: absolute;
-    bottom: 0;
-}
+    padding: 16px;
+  }
+  
+  .chatContainer h1 {
+    color: white;
+    font-size: 24px;
+    margin: 0 0 16px 0;
+  }
+  
+  .chattingDisplay {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    color: white;
+  }
+  
+  .chattingArea {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .chattingArea .MuiTextField-root {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+  }
+  
+  .chattingArea .MuiTextField-root .MuiOutlinedInput-root {
+    color: white;
+  }
+  
+  .chattingArea .MuiTextField-root .MuiInputLabel-root {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  /* Lobby styling */
+  .lobby {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    gap: 24px;
+    padding: 24px;
+  }
+  
+  .lobby h2 {
+    color: white;
+    font-size: 32px;
+    margin-bottom: 24px;
+  }
+  
+  .lobby video {
+    width: 400px;
+    height: 225px;
+    border-radius: 16px;
+    margin-top: 32px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+  }
+  
+  .lobby .MuiTextField-root {
+    width: 300px;
+    margin-bottom: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+  }
+  
+  .lobby .MuiButton-root {
+    width: 300px;
+  }
