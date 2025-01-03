@@ -23,10 +23,10 @@ const AnimatedIllustration = () => {
       >
         <motion.div
           animate={{ 
-            y: ['-10px', '10px', '-10px'],
+            y: ['-5px', '5px', '-5px'],
           }}
           transition={{ 
-            duration: 4,
+            duration: 6,
             repeat: Infinity,
             ease: "easeInOut"
           }}
@@ -38,7 +38,7 @@ const AnimatedIllustration = () => {
             sx={{
               width: '100%',
               height: 'auto',
-              maxWidth: { xs: '300px', sm: '400px', md: '500px' },
+              maxWidth: { xs: '300px', sm: '400px', md: '450px' },
               display: 'block',
               margin: '0 auto',
               filter: 'drop-shadow(0px 10px 20px rgba(0, 0, 0, 0.25))'

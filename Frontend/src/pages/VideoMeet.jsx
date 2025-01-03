@@ -102,6 +102,17 @@ const VideoMeetComponent = () => {
         getPermissions();
     }, [])
 
+    let getDislayMedia = () => { //If screen is true, the navigator.mediaDevices.getDisplayMedia API is used to capture the screen. This API returns a MediaStream object
+        if (screen) {
+            if (navigator.mediaDevices.getDisplayMedia) {
+                navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
+                    .then(getDislayMediaSuccess)
+                    .then((stream) => {  console.log('Screen sharing stream:', stream); })
+                    .catch((e) => console.log(e))
+            }
+        }
+    }
+
     useEffect(() => { //Triggers getUserMedia whenever the states change (e.g., user toggles mute or camera).
         if (video !== undefined && audio !== undefined) {
             getUserMedia()
@@ -178,6 +189,47 @@ const VideoMeetComponent = () => {
         }
     }
 
+    let getDislayMediaSuccess = (stream) => {
+        console.log("HERE")
+        try {
+            window.localStream.getTracks().forEach(track => track.stop())  // Stop current tracks
+        } catch (e) { console.log(e) }
+
+        window.localStream = stream // Set screen-sharing stream as the local stream
+        localVideoRef.current.srcObject = stream // Update the local video element
+
+        for (let id in connections) {
+            if (id === socketIdRef.current) continue
+
+            connections[id].addStream(window.localStream) // Add screen stream to WebRTC peer connection
+
+            connections[id].createOffer().then((description) => {
+                connections[id].setLocalDescription(description)
+                    .then(() => {
+                        socketRef.current.emit('signal', id, JSON.stringify({ 'sdp': connections[id].localDescription }))
+                    })
+                    .catch(e => console.log(e))
+            })
+        }
+
+        stream.getTracks().forEach(track => track.onended = () => {
+            setScreen(false)  // When sharing stops, reset the `screen` state
+
+            try {
+                let tracks = localVideoRef.current.srcObject.getTracks()
+                tracks.forEach(track => track.stop())
+            } catch (e) { console.log(e) }
+
+            let blackSilence = (...args) => new MediaStream([black(...args), silence()])
+            window.localStream = blackSilence()
+            localVideoRef.current.srcObject = window.localStream
+
+            getUserMedia() // Revert to camera/mic stream
+
+        })
+    }
+
+
     //todo
     let gotMessageFromServer = (fromId, message) => {
         const signal = JSON.parse(message);
@@ -248,8 +300,7 @@ const VideoMeetComponent = () => {
                 // clients - All clients in the room
                 //  EX - (JOINCALL)STEP F4 -  When Rahul joins, his socket.id is added to the clients list. Everyone in the room gets this updated list of participants. 
                 clients.forEach((socketListId) => {
-                    // Prevent duplicate connections
-                    if (connections[socketListId]) return;
+                    
 
                     connections[socketListId] = new RTCPeerConnection(peerConfigConnections) //It's a WebRTC object used to handle video and audio calls.Think of it as a direct communication line between two users.
 
@@ -262,33 +313,33 @@ const VideoMeetComponent = () => {
                         }
                     }
 
-                    connections[socketListId].onaddstream = (event) => { //onaddstream's triggered when the other user's video or audio is received.
-
-                        let videoExists = videoRef.current.find(video => video.socketId === socketListId)
-                        if (videoExists) {
-                            setVideos(videos => {
-                                const updatedVideos = videos.map(video =>
-                                    video.socketId === socketListId ? { ...video, stream: event.stream } : video
-                                )
-                                videoRef.current = updatedVideos;
-                                return updatedVideos;
-                            })
-                        } else {
-                            let newVideo = {
-                                socketId: socketListId,
-                                stream: event.stream,
-                                autoPlay: true,
-                                playsinline: true
+                    connections[socketListId].onaddstream = (event) => {
+                        setVideos((prevVideos) => {
+                            // Check if the video already exists in the current state
+                            const videoExists = prevVideos.some(video => video.socketId === socketListId);
+                    
+                            if (videoExists) {
+                                // Update the stream for the existing video entry
+                                return prevVideos.map(video =>
+                                    video.socketId === socketListId
+                                        ? { ...video, stream: event.stream }
+                                        : video
+                                );
+                            } else {
+                                // Add a new video entry if it doesn't exist
+                                return [
+                                    ...prevVideos,
+                                    {
+                                        socketId: socketListId,
+                                        stream: event.stream,
+                                        autoPlay: true,
+                                        playsinline: true,
+                                    },
+                                ];
                             }
-
-                            setVideos(videos => {
-                                const updatedVideos = [...videos, newVideo];
-                                videoRef.current = updatedVideos;
-                                ////EX (Receiving and Displaying Media) STEP F1 - When Rahul’s stream is received by another user, they add it to their video list.
-                                return updatedVideos
-                            })
-                        }
+                        });
                     };
+                    
 
                     if (window.localStream !== undefined && window.localStream !== null) {
                         connections[socketListId].addStream(window.localStream);
@@ -359,6 +410,16 @@ const VideoMeetComponent = () => {
     let handleAudio = () => {
         setAudio(!audio)
     }
+
+    useEffect(() => {
+        if (screen !== undefined) {
+            getDislayMedia();
+        }
+    }, [screen])
+
+    let handleScreen = ()=>{
+        setScreen(!screen)
+    }
     return (
         <div>
             {askForUsername === true ?
@@ -387,8 +448,8 @@ const VideoMeetComponent = () => {
                         </IconButton>
 
                         {screenAvailable === true ?
-                        <IconButton style={{color : 'white'}}>
-                            {screen === true ? <ScreenShareIcon /> : <StopScreenShareIcon/>}
+                        <IconButton onClick={handleScreen} style={{color : 'white'}}>
+                            {screen === true ? <ScreenShareIcon /> : <StopScreenShareIcon />}
                         </IconButton> : <> </>}
 
                         <Badge badgeContent={newMessages} max={999} color='secondary'>
@@ -401,7 +462,7 @@ const VideoMeetComponent = () => {
                     <video className='meetUserVideo' ref={localVideoRef}  autoPlay muted ></video>
                     <div className='conferenceView'>
                     {videos.map((video) => (
-                        <div  key={video.socketId}>
+                        <div key={video.socketId} >
                             <video 
                                 data-socket={video.socketId}
                                 ref={ref => {
