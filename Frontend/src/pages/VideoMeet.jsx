@@ -434,6 +434,16 @@ const VideoMeetComponent = () => {
         setMessage('');
     }
 
+    let handleEndCall = ()=>{
+        try {
+            let tracks = localVideoRef.current.srcObject.getTracks();
+            tracks.forEach(track => track.stop());
+            window.location.href = "/" ;
+        } catch (e) {
+            
+        }
+    }
+
     return (
         <div>
             {askForUsername === true ?
@@ -479,7 +489,7 @@ const VideoMeetComponent = () => {
                             {(video === true) ? <VideocamIcon /> : <VideocamOffIcon />}
                         </IconButton>
 
-                        <IconButton style={{ color: 'red' }} >
+                        <IconButton onClick={handleEndCall} style={{ color: 'red' }} >
                             <CallEnd />
                         </IconButton>
 
