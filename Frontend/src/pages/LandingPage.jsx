@@ -1,27 +1,36 @@
 import React from 'react';
-import '../css/LandingPage.css'
+import { Box, Container } from '@mui/material';
+import Navbar from './Navbar';
+import HeroContent from './HeroContent';
+import AnimatedIllustration from './AnimatedIllustration';
 
-export default function LandingPage() {
+const LandingPage = () => {
   return (
-    <div className='LandingPage'>
-      <nav>
-        <div className='leftNav'>VividTalk</div>
-        <div className='rightNav'>
-          <p>Join as Guest</p>
-          <p>Sign in</p>
-          <p>Log in</p>
-        </div>
-      </nav>
-      <div className='heroSection'>
-        <div className="leftHero">
-          <h2>Engage, Connect , and </h2>
-          <h2> talk Vividly</h2>
-          <button>Get started</button>
-        </div>
-        <div className="rightHero">
-          <img src="/mobile.png" />
-        </div>
-      </div>
-    </div>
-  )
-}
+    <Box sx={{ 
+      minHeight: '100vh', 
+      width: '100%',
+      bgcolor: '#0A1929',
+      overflow: 'hidden'
+    }}>
+      <Navbar />
+
+      <Container maxWidth="xl" sx={{ 
+        mt: { xs: 4, md: 8 },
+        px: { xs: 2, sm: 4, md: 6 }
+      }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'center', md: 'flex-start' },
+          justifyContent: 'space-between',
+          minHeight: { md: 'calc(100vh - 200px)' }
+        }}>
+          <HeroContent />
+          <AnimatedIllustration />
+        </Box>
+      </Container>
+    </Box>
+  );
+};
+
+export default LandingPage;
