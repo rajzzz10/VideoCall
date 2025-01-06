@@ -9,8 +9,8 @@ const meetingSchema = new Schema(
             type : String ,
             required : true
         },
-        user_id : {
-            type : String,
+        date : {
+            type : Date,
             default : Date.now,
             required:true
         }

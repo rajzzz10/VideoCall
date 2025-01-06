@@ -15,7 +15,7 @@ function App() {
             <Route path='/' element={<LandingPage/>} />
             <Route path='/auth' element = {<Authentication/>} />
             <Route path='/home' element={<HomeComponent/>}/>
-            <Route path='meet/:url' element= {<VideoMeetComponent/>}/>
+            <Route path='/:url' element= {<VideoMeetComponent/>}/>
           </Routes>
         </AuthProvider>
       </Router>
